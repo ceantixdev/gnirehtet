@@ -35,7 +35,7 @@ use super::transport_header::TransportHeader;
 
 const TAG: &str = "UdpConnection";
 
-pub const IDLE_TIMEOUT_SECONDS: u64 = 2 * 60;
+pub const IDLE_TIMEOUT_SECONDS: u64 = 10 * 60;
 
 pub struct UdpConnection {
     id: ConnectionId,

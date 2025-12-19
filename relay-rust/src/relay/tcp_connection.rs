@@ -171,7 +171,7 @@ impl TcpConnection {
             stream,
             interests,
             token: Token(0), // default value, will be set afterwards
-            client_to_network: StreamBuffer::new(4 * MAX_PACKET_LENGTH),
+            client_to_network: StreamBuffer::new(256 * MAX_PACKET_LENGTH),
             network_to_client: packetizer,
             packet_for_client_length: None,
             closed: false,
@@ -196,7 +196,9 @@ impl TcpConnection {
     }
 
     fn create_stream(id: &ConnectionId) -> io::Result<TcpStream> {
-        TcpStream::connect(&id.rewritten_destination().into())
+        let stream = TcpStream::connect(&id.rewritten_destination().into())?;
+        stream.set_nodelay(true)?;
+        Ok(stream)
     }
 
     fn remove_from_router(&self) {
@@ -250,6 +252,9 @@ impl TcpConnection {
 
     // return Err(err) with err.kind() == io::ErrorKind::WouldBlock on spurious event
     fn process_send(&mut self, selector: &mut Selector) -> io::Result<()> {
+        if self.client_to_network.is_empty() {
+            return Ok(());
+        }
         match self.client_to_network.write_to(&mut self.stream) {
             Ok(w) => {
                 if w != 0 {
